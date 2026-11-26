@@ -25,7 +25,7 @@ export function startOfferReminderScheduler() {
     for (const offer of dueForReminder) {
       const candidate = offer.application.candidate;
       const respondToken = signPurposeToken({ offerId: offer.id, candidateId: candidate.id }, "OFFER_RESPONSE", "7d");
-      const link = `${env.appUrl}/offer/respond?token=${respondToken}`;
+      const link = `${env.offerRespondUrl}?token=${respondToken}`;
       const result = await sendTemplateEmail({
         to: candidate.email,
         templateKey: "offer_reminder",

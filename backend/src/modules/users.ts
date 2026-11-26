@@ -231,6 +231,26 @@ router.post(
   }),
 );
 
+router.delete(
+  "/users/:id",
+  requirePermission("users.manage"),
+  asyncHandler(async (req, res) => {
+    const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
+    const auth = req.auth!;
+    if (!auth.roles.includes("SUPER_ADMIN")) throw ApiError.forbidden("Only a Super Admin can delete an HR team member.");
+    if (id === auth.subjectId) throw ApiError.badRequest("You cannot delete your own account.");
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (!user) throw ApiError.notFound("User not found.");
+    await prisma.authSession.updateMany({ where: { subjectType: "HR", subjectId: id }, data: { revokedAt: new Date() } });
+    await prisma.otpVerification.updateMany({ where: { email: user.email, consumedAt: null }, data: { consumedAt: new Date() } });
+    await prisma.totpEnrollment.updateMany({ where: { userId: id, consumedAt: null }, data: { consumedAt: new Date() } });
+    await prisma.user.delete({ where: { id } });
+    clearAuthCache();
+    await logAudit(req, { action: "USER_DELETE", entityType: "User", entityId: id, actorId: req.auth!.subjectId, actorEmail: req.auth!.email });
+    return ok(res, { message: "HR team member deleted." });
+  }),
+);
+
 router.get(
   "/users/:id/sessions",
   requirePermission("users.manage"),

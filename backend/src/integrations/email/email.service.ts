@@ -1,7 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { Resend } from "resend";
 import { prisma } from "../../lib/prisma";
-import { resendConfigured, smtpConfigured, env } from "../../config/env";
+import { resendConfigured, smtpConfigured, brevoConfigured, env } from "../../config/env";
 import { renderEmail } from "./templates";
 
 let transporter: Transporter | null | undefined;
@@ -28,6 +28,42 @@ function getTransporter(): Transporter | null {
     } as any) : null;
   }
   return transporter;
+}
+
+async function sendViaBrevoHttp(input: SendEmailInput, log: any): Promise<SendResult | null> {
+  if (!brevoConfigured) return null;
+  const apiKey = (env as any).brevoApiKey;
+  const fromMatch = (env.mailFrom || "").match(/^(.*?)<([^>]+)>$/);
+  const senderName = (fromMatch ? fromMatch[1].trim() : env.appName) || "EMC Talent Acquisition";
+  const senderEmail = fromMatch ? fromMatch[2].trim() : (env.mailFrom || "no-reply@emc.example");
+  const maxAttempts = 3;
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: { "api-key": apiKey, "content-type": "application/json", "accept": "application/json" },
+        body: JSON.stringify({
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: input.to }],
+          subject: input.subject ?? "(no subject)",
+          htmlContent: input.html,
+          textContent: input.text,
+          replyTo: env.mailReplyTo ? { email: env.mailReplyTo } : undefined,
+          attachment: input.attachments?.map((a) => ({ name: a.filename, content: a.content.toString("base64") })),
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((body as any)?.message || `Brevo HTTP ${res.status}`);
+      try { if (log) await prisma.emailLog.update({ where: { id: log.id }, data: { status: "SENT", attempts: attempt, sentAt: new Date(), metadata: { ...(log.metadata as Record<string, unknown> | undefined), messageId: (body as any)?.messageId, provider: "brevo-http" } } }); } catch {}
+      return { status: "SENT", message: (body as any)?.messageId };
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`[email:brevo-http] attempt ${attempt} failed for ${input.to}`, lastError.message);
+      if (attempt < maxAttempts) await new Promise((resolve) => setTimeout(resolve, 400 * attempt));
+    }
+  }
+  return { status: "FAILED", message: lastError?.message ?? "Brevo send failed" };
 }
 
 interface SendEmailInput {
@@ -91,6 +127,12 @@ export async function sendEmail(input: SendEmailInput): Promise<SendResult> {
     }
     return null;
   };
+
+  if (brevoConfigured) {
+    const brevoResult = await sendViaBrevoHttp(input, log);
+    if (brevoResult) return brevoResult;
+    return { status: "FAILED", message: "Brevo send failed" };
+  }
 
   if (!transporter || !smtpConfigured) {
     const resendResult = await sendViaResend();

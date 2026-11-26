@@ -290,7 +290,7 @@ router.post(
     if (existing) throw ApiError.conflict("An active invitation already exists.");
     const token = randomToken();
     const invitation = await prisma.employeeUpdateInvitation.create({ data: { employeeId: id, tokenHash: sha256(token), createdById: req.auth!.subjectId } });
-    const link = `${env.appUrl}/employee/update?token=${token}`;
+    const link = `${env.employeeUpdateUrl}?token=${token}`;
     void sendTemplateEmail({
       to: employee.officialEmail, templateKey: "employee_update_invitation",
       data: { name: employee.fullName, employeeCode: employee.employeeCode, email: employee.officialEmail, link, expiresAt: null },
@@ -340,7 +340,7 @@ router.post(
         const invitation = await prisma.employeeUpdateInvitation.create({
           data: { employeeId: employee.id, tokenHash: sha256(token), createdById: req.auth!.subjectId },
         });
-        const link = `${env.appUrl}/employee/update?token=${token}`;
+        const link = `${env.employeeUpdateUrl}?token=${token}`;
         void sendTemplateEmail({
           to: email,
           templateKey: "employee_update_invitation",
@@ -477,7 +477,7 @@ router.post(
         void sendTemplateEmail({
           to: correctionEmail,
           templateKey: "employee_update_invitation",
-          data: { name: duplicate.fullName, employeeCode: duplicate.employeeCode, email: correctionEmail, link: `${env.appUrl}/employee/update?token=${token}`, expiresAt: null },
+          data: { name: duplicate.fullName, employeeCode: duplicate.employeeCode, email: correctionEmail, link: `${env.employeeUpdateUrl}?token=${token}`, expiresAt: null },
           metadata: { employeeId: duplicate.id, applicationId: application.id },
         });
         await logAudit(req, { action: "EMPLOYEE_CORRECTION_INVITE", entityType: "Employee", entityId: duplicate.id, actorId: req.auth!.subjectId, actorEmail: req.auth!.email, metadata: { applicationId: application.id, correctionEmail } });

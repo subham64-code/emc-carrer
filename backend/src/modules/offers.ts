@@ -67,7 +67,7 @@ router.post(
       await notifyHrTeam({ type: "offer.accepted", title: "Offer accepted", body: `${offer.application.candidate.fullName} accepted the offer for ${offer.designation}.`, entityType: "OfferLetter", entityId: offer.id });
 
       const uploadToken = signPurposeToken({ applicationId: offer.applicationId, candidateId: offer.application.candidateId }, "DOC_UPLOAD", "7d");
-      const uploadLink = `${env.appUrl}/onboard/documents?token=${uploadToken}`;
+      const uploadLink = `${env.docUploadUrl}?token=${uploadToken}`;
       void sendTemplateEmail({
         to: offer.application.candidate.email,
         templateKey: "document_upload_request",
@@ -91,7 +91,7 @@ router.post(
     const responsePayload: Record<string, unknown> = { message: `Offer ${decision.toLowerCase()}.`, decision };
     if (decision === "ACCEPTED") {
       responsePayload.uploadToken = signPurposeToken({ applicationId: offer.applicationId, candidateId: offer.application.candidateId }, "DOC_UPLOAD", "7d");
-      responsePayload.uploadLink = `${env.appUrl}/onboard/documents?token=${responsePayload.uploadToken}`;
+      responsePayload.uploadLink = `${env.docUploadUrl}?token=${responsePayload.uploadToken}`;
     }
     return ok(res, responsePayload);
   }),
@@ -446,7 +446,7 @@ router.post(
     if (!offer.pdfFileId) throw ApiError.badRequest("Generate the offer letter PDF before sending.");
     const pdfBuffer = await readStoredFile(offer.pdfFile!);
     const respondToken = signPurposeToken({ offerId: offer.id, candidateId: offer.application.candidateId }, "OFFER_RESPONSE", "7d");
-    const respondLink = `${env.appUrl}/offer/respond?token=${respondToken}`;
+    const respondLink = `${env.offerRespondUrl}?token=${respondToken}`;
     void sendTemplateEmail({
       to: offer.application.candidate.email,
       templateKey: "offer_letter",
@@ -481,7 +481,7 @@ router.post(
       throw ApiError.badRequest("Only pending offers can be reminded.");
     }
     const respondToken = signPurposeToken({ offerId: offer.id, candidateId: offer.application.candidateId }, "OFFER_RESPONSE", "7d");
-    const respondLink = `${env.appUrl}/offer/respond?token=${respondToken}`;
+    const respondLink = `${env.offerRespondUrl}?token=${respondToken}`;
     void sendTemplateEmail({
       to: offer.application.candidate.email,
       templateKey: "offer_reminder",

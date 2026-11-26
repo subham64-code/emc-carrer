@@ -54,6 +54,7 @@ export const hrApi = {
   createUser: (body: any) => api.post("/users", body),
   updateUser: (id: string, body: any) => api.patch(`/users/${id}`, body),
   deactivateUser: (id: string) => api.post(`/users/${id}/deactivate`),
+  deleteUser: (id: string) => api.delete(`/users/${id}`),
   activateUser: (id: string) => api.post(`/users/${id}/activate`),
   userSessions: (id: string) => api.get(`/users/${id}/sessions`),
   revokeSession: (id: string, sessionId: string) => api.delete(`/users/${id}/sessions/${sessionId}`),

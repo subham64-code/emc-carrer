@@ -59,8 +59,8 @@ const GROUPS: NavGroup[] = [
     items: [
       { label: "Dashboard", to: "/hr/dashboard", icon: LayoutDashboard, permission: SECTION_PERMISSIONS.dashboard, match: onPath("/hr/dashboard") },
       { label: "Manage Opening", to: "/hr/manage-openings", icon: ExternalLink, permission: SECTION_PERMISSIONS.openings, match: (pathname) => onPath("/hr/manage-openings")(pathname) || onPath("/hr/openings")(pathname) },
-      { label: "HR Team", to: "/hr/team", icon: UsersRound, permission: SECTION_PERMISSIONS.users, match: onPath("/hr/team") },
-      { label: "Permissions", to: "/hr/permissions", icon: ShieldCheck, permission: SECTION_PERMISSIONS.users, match: onPath("/hr/permissions") },
+      { label: "HR Team", to: "/hr/team", icon: UsersRound, controllerOnly: true, match: onPath("/hr/team") },
+      { label: "Permissions", to: "/hr/permissions", icon: ShieldCheck, controllerOnly: true, match: onPath("/hr/permissions") },
     ],
   },
   {

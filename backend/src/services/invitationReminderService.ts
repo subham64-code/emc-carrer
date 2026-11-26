@@ -72,7 +72,7 @@ export function startEmployeeInvitationReminderScheduler() {
           sentAt: now,
         },
       });
-      const link = `${env.appUrl}/employee/update?token=${token}`;
+      const link = `${env.employeeUpdateUrl}?token=${token}`;
       void sendTemplateEmail({
         to: invitation.employee.officialEmail,
         templateKey: "employee_update_reminder",

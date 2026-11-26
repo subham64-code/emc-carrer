@@ -205,7 +205,7 @@ router.post(
     const invitation = await prisma.employeeUpdateInvitation.create({
       data: { employeeId: employee.id, tokenHash: sha256(token), expiresAt, createdById: req.auth!.subjectId },
     });
-    const link = `${env.appUrl}/employee/update?token=${token}`;
+    const link = `${env.employeeUpdateUrl}?token=${token}`;
     void sendTemplateEmail({
       to: email,
       templateKey: "employee_update_invitation",
@@ -290,7 +290,7 @@ async function issueInvitationLink(req: any, res: any, renew: boolean, sendEmail
       tokenRenewalCount: renew ? (inv.tokenRenewalCount ?? 0) + 1 : inv.tokenRenewalCount,
     },
   });
-  const link = `${env.appUrl}/employee/update?token=${token}`;
+  const link = `${env.employeeUpdateUrl}?token=${token}`;
   if (sendEmail) {
     void sendTemplateEmail({
       to: inv.employee.officialEmail,
@@ -342,7 +342,7 @@ router.post(
     await prisma.employeeInviteReminder.create({
       data: { invitationId: id, purpose: body.purpose, profileCompletion: completion, renewedToken: true, sentAt: now },
     });
-    const link = `${env.appUrl}/employee/update?token=${token}`;
+    const link = `${env.employeeUpdateUrl}?token=${token}`;
     void sendTemplateEmail({
       to: inv.employee.officialEmail,
       templateKey: "employee_update_reminder",
@@ -586,7 +586,7 @@ router.post(
         submission: updatedSubmission as any,
       },
     });
-    const link = `${env.appUrl}/employee/update?token=${token}`;
+    const link = `${env.employeeUpdateUrl}?token=${token}`;
     void sendTemplateEmail({
       to: inv.employee.officialEmail,
       templateKey: "employee_update_changes_requested",

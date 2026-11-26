@@ -54,6 +54,9 @@ export const env = {
   trackApplicationUrl: str("TRACK_APPLICATION_URL", "http://localhost:5000/track-application.html"),
   apiUrl: str("API_URL", "http://localhost:4000"),
   publicApiUrl: str("PUBLIC_API_URL", "http://localhost:4000"),
+  employeeUpdateUrl: str("EMPLOYEE_UPDATE_URL", `${isProd ? "https://emc-hr-frontend.pages.dev" : "http://localhost:5173"}/employee/update`),
+  docUploadUrl: str("DOC_UPLOAD_URL", `${isProd ? "https://emc-hr-frontend.pages.dev" : "http://localhost:5173"}/onboard/documents`),
+  offerRespondUrl: str("OFFER_RESPOND_URL", `${isProd ? "https://emc-hr-frontend.pages.dev" : "http://localhost:5173"}/offer/respond`),
   corsOrigins: str("CORS_ORIGINS", "http://localhost:5173,http://localhost:5000")
     .split(",")
     .map((origin) => origin.trim())
@@ -101,6 +104,7 @@ export const env = {
   smtpUser: str("SMTP_USER", ""),
   smtpPass: str("SMTP_PASS", ""),
   resendApiKey: str("RESEND_API_KEY", ""),
+  brevoApiKey: str("BREVO_API_KEY", str("SMTP_PASS", "")),
   mailFrom: str("MAIL_FROM", "EMC Talent Acquisition <no-reply@emc.example>"),
   mailReplyTo: str("MAIL_REPLY_TO", "hr@emc.example"),
 
@@ -134,6 +138,7 @@ export const env = {
 
 export const smtpConfigured = Boolean(env.smtpHost && env.smtpUser && env.smtpPass);
 export const resendConfigured = Boolean(env.resendApiKey);
+export const brevoConfigured = Boolean(env.brevoApiKey && (env.smtpHost.includes("brevo") || env.brevoApiKey.startsWith("xsmtpsib") || env.brevoApiKey.startsWith("xkeysib")));
 
 if (isProd) {
   if (!env.jwtSecret || env.jwtSecret.includes("change-me")) {

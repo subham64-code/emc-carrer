@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Eye, Mail, ShieldCheck, UserPlus, X } from "lucide-react";
+import { Eye, Mail, ShieldCheck, Trash2, UserPlus, X } from "lucide-react";
 import { hrApi } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import PageHeading from "../../components/ref/PageHeading";
@@ -21,8 +21,11 @@ export default function Users() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [setupLink, setSetupLink] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const canManage = (user?.permissions || []).includes("users.manage");
+  const isSuperAdmin = (user?.roles ?? []).includes("SUPER_ADMIN");
 
   const load = () => {
     hrApi
@@ -85,6 +88,22 @@ export default function Users() {
       setMessage(`${item.name} ${item.isActive ? "deactivated" : "activated"}.`);
     } catch (err: any) {
       setError(err.response?.data?.error?.message || "Update failed.");
+    }
+  };
+
+  const deleteUser = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    setError("");
+    try {
+      await hrApi.deleteUser(deleteTarget.id);
+      setUsers((current) => current.filter((u) => u.id !== deleteTarget.id));
+      setDeleteTarget(null);
+      setMessage(`${deleteTarget.name} was deleted.`);
+    } catch (err: any) {
+      setError(err.response?.data?.error?.message || "Delete failed.");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -163,7 +182,7 @@ export default function Users() {
                 <th>Member</th>
                 <th>Role</th>
                 <th>Status</th>
-                <th style={{ textAlign: "right" }}>Action</th>
+                <th style={{ textAlign: "center" }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -189,8 +208,11 @@ export default function Users() {
                     </div>
                   </td>
                   <td><StatusPill status={item.isActive ? "ACTIVE" : "INACTIVE"} /></td>
-                  <td style={{ textAlign: "right" }}>
-                    <button type="button" className="btn btn--outline btn--sm" onClick={() => setDetailUser(item)}><Eye size={14} /> View</button>
+                  <td style={{ textAlign: "center" }}>
+                    <div className="flex gap-2" style={{ justifyContent: "center" }}>
+                      <button type="button" className="btn btn--outline btn--sm" onClick={() => setDetailUser(item)}><Eye size={14} /> View</button>
+                      {isSuperAdmin && <Button variant="danger" size="sm" icon={Trash2} onClick={() => setDeleteTarget(item)}>Delete</Button>}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -304,6 +326,19 @@ export default function Users() {
             )}
           </div>
         )}
+      </Modal>
+
+      <Modal
+        open={!!deleteTarget}
+        onClose={() => (deleting ? undefined : setDeleteTarget(null))}
+        title="Delete HR team member?"
+        subtitle={deleteTarget ? `${deleteTarget.name} (${deleteTarget.email})` : ""}
+        size="md"
+        footer={<><Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Keep</Button><Button variant="danger" onClick={deleteUser} loading={deleting}>Delete HR member</Button></>}
+      >
+        <p className="text-sm ink-body">
+          Deleting an HR team member permanently removes the account. The member will no longer be able to sign in; this action cannot be undone.
+        </p>
       </Modal>
     </div>
   );

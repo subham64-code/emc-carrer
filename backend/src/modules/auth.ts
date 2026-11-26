@@ -571,7 +571,7 @@ router.post(
       data: { employeeId, tokenHash: sha256(token), expiresAt, createdById: req.auth!.subjectId },
     });
 
-    const link = `${env.appUrl}/employee/update?token=${token}`;
+    const link = `${env.employeeUpdateUrl}?token=${token}`;
     void sendTemplateEmail({
       to: employee.officialEmail,
       templateKey: "employee_update_invitation",

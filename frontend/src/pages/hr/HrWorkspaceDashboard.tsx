@@ -24,7 +24,7 @@ import {
 
 } from "lucide-react";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import { hrApi } from "../../lib/api";
 
@@ -63,6 +63,9 @@ export default function HrWorkspaceDashboard() {
   const invalidate = useInvalidate();
 
   const can = (permission?: string) => canAccess(user, permission);
+
+  const [barChartZoom, setBarChartZoom] = useState(1);
+
 
 
 
@@ -381,7 +384,7 @@ export default function HrWorkspaceDashboard() {
 
       <div className="hr-dashboard-grid hr-dashboard-grid--workspace">
         <section className="card">
-          <div className="card__header"><div><h2 className="card__title">Employees per department</h2></div></div>
+          <div className="card__header"><div><h2 className="card__title">Employees per department</h2></div><div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 6 }}><button type="button" onClick={() => setBarChartZoom((z) => Math.max(1, +(z - 0.25).toFixed(2)))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--ink)", fontWeight: 700, cursor: "pointer" }}>-</button><span style={{ fontSize: 12, color: "var(--muted)" }}>{Math.round(barChartZoom * 100)}%</span><button type="button" onClick={() => setBarChartZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid var(--border)", background: "var(--card)", color: "var(--ink)", fontWeight: 700, cursor: "pointer" }}>+</button></div></div>
           <div className="card__body">
             {(() => {
               const rows = (departments as any[]).map((d) => ({ name: String(d.name || "Unspecified"), value: Number(d.totalEmployees ?? 0) })).filter((d) => d.name);
@@ -393,12 +396,12 @@ export default function HrWorkspaceDashboard() {
               const barW = Math.max(18, Math.min(40, slot - 16));
               return (
                 <div style={{ overflowX: "auto" }}>
-                  <svg viewBox={`0 0 ${chartW} ${H}`} style={{ width: "100%", minWidth: 320, height: H }}>
-                    {[0, 1, 2, 3, 4].map((i) => { const y = PT + (i * innerH) / 4; const v = Math.round(max - (i * max) / 4); return <g key={i}><line x1={PL} x2={chartW - PR} y1={y} y2={y} stroke="var(--border)" /><text x={PL - 8} y={y + 4} textAnchor="end" fontSize="10" fill="var(--muted)">{v}</text></g>; })}
+                  <svg viewBox={`0 0 ${chartW} ${H}`} style={{ width: `calc(100% * ${barChartZoom})`, minWidth: Math.max(320, chartW * barChartZoom), height: H }}>
+                    {[0, 1, 2, 3, 4].map((i) => { const y = PT + (i * innerH) / 4; const v = Math.round(max - (i * max) / 4); return <g key={i}><line x1={PL} x2={chartW - PR} y1={y} y2={y} stroke="var(--border)" /><text x={PL - 8} y={y + 4} textAnchor="end" fontSize="10" fontWeight="700" fill="var(--muted)">{v}</text></g>; })}
                     <line x1={PL} y1={PT} x2={PL} y2={H - PB} stroke="var(--muted)" strokeWidth="1.5" />
                     <line x1={PL} y1={H - PB} x2={chartW - PR} y2={H - PB} stroke="var(--muted)" strokeWidth="1.5" />
-                    {rows.map((r, i) => { const x = PL + i * slot + (slot - barW) / 2; const h = Math.max(2, (r.value / max) * innerH); const y = H - PB - h; const lx = x + barW / 2; const ly = H - PB + 10; return <g key={r.name + i}><rect x={x} y={y} width={barW} height={h} fill="#7ab41b" rx="4" />{r.value > 0 && <text x={lx} y={y - 6} textAnchor="middle" fontSize="10" fill="var(--ink)">{r.value}</text>}<text x={lx} y={ly} textAnchor="end" fontSize="10" fill="var(--muted)" transform={`rotate(-90 ${lx} ${ly})`}>{r.name}</text></g>; })}
-                    {rows.length === 0 && <text x={chartW / 2} y={H / 2} textAnchor="middle" fontSize="12" fill="var(--muted)">No department data</text>}
+                    {rows.map((r, i) => { const x = PL + i * slot + (slot - barW) / 2; const h = Math.max(2, (r.value / max) * innerH); const y = H - PB - h; const lx = x + barW / 2; const ly = H - PB + 10; return <g key={r.name + i}><rect x={x} y={y} width={barW} height={h} fill="#7ab41b" rx="4" />{r.value > 0 && <text x={lx} y={y - 6} textAnchor="middle" fontSize="10" fontWeight="700" fill="var(--ink)">{r.value}</text>}<text x={lx} y={ly} textAnchor="end" fontSize="10" fontWeight="700" fill="var(--muted)" transform={`rotate(-90 ${lx} ${ly})`}>{r.name}</text></g>; })}
+                    {rows.length === 0 && <text x={chartW / 2} y={H / 2} textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--muted)">No department data</text>}
                   </svg>
                 </div>
               );

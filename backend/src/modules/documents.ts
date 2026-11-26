@@ -6,7 +6,7 @@ import { ApiError } from "../utils/ApiError";
 import { ok, created, paginated } from "../utils/http";
 import { getPagination } from "../utils/pagination";
 import { authenticate, requireAuth, requireHr, requirePermission } from "../middleware/auth";
-import { verifyPurposeToken } from "../utils/jwt";
+import { signPurposeToken, verifyPurposeToken } from "../utils/jwt";
 import { logAudit } from "../services/audit.service";
 import { cache } from "../services/cache.service";
 import { notifyHrTeam, notifyCandidate } from "../services/notification.service";
@@ -185,7 +185,7 @@ router.post(
     const candidateEmail = document.application.candidate.email;
     const candidateName = document.application.candidate.fullName;
     const docName = document.category.name;
-    const link = `${env.appUrl}/candidate/documents`;
+    const link = `${env.docUploadUrl}?token=${signPurposeToken({ applicationId: document.applicationId, candidateId: document.candidateId }, "DOC_UPLOAD", "7d")}`;
     if (status === DOCUMENT_STATUS.ACCEPTED) {
       void sendTemplateEmail({ to: candidateEmail, templateKey: "document_accepted", data: { name: candidateName, documentName: docName, link } });
       await notifyCandidate(document.application.candidateId, { type: "document.accepted", title: "Document accepted", body: `${docName} has been accepted.`, entityType: "CandidateDocument", entityId: id });
@@ -208,7 +208,7 @@ router.post(
     const { id } = z.object({ id: z.string().min(1) }).parse(req.params);
     const document = await prisma.candidateDocument.findUnique({ where: { id }, include: { category: true, application: { include: { candidate: true } } } });
     if (!document) throw ApiError.notFound("Document not found.");
-    const link = `${env.appUrl}/candidate/documents`;
+    const link = `${env.docUploadUrl}?token=${signPurposeToken({ applicationId: document.applicationId, candidateId: document.candidateId }, "DOC_UPLOAD", "7d")}`;
     void sendTemplateEmail({ to: document.application.candidate.email, templateKey: "pending_document_reminder", data: { name: document.application.candidate.fullName, pendingDocuments: document.category.name, applicationCode: document.application.applicationCode, link } });
     await logAudit(req, { action: "DOCUMENT_REMIND", entityType: "CandidateDocument", entityId: id, actorId: req.auth!.subjectId, actorEmail: req.auth!.email });
     return ok(res, { message: "Reminder sent." });
